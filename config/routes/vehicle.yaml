@@ -1,0 +1,7 @@
+vehicle-rest:
+  type: rest
+  prefix: '/vehicle'
+  resource: App\Controller\VehicleRestController
+  defaults: {id: null}
+  trailing_slash_on_root: false
+  name_prefix: vehicle_

@@ -1,0 +1,18 @@
+user-rest:
+  type: rest
+  prefix: '/user'
+  resource: App\Controller\UserRestController
+  defaults: {id: null}
+  trailing_slash_on_root: false
+  name_prefix: user_
+
+#user:
+#  path: '/user'
+#  controller: App\Controller\UserRestController::getAll
+#  methods: ['GET']
+#
+#user-single:
+#  path: '/user/{id}'
+#  controller: App\Controller\UserRestController::get
+#  methods: ['GET']
+
