@@ -10,11 +10,16 @@ namespace App\Document;
 
 use Doctrine\ODM\MongoDB\Mapping\Annotations\Document;
 use Doctrine\ODM\MongoDB\Mapping\Annotations\Field;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\HasLifecycleCallbacks;
 use Doctrine\ODM\MongoDB\Mapping\Annotations\Id;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\PrePersist;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\PreUpdate;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\UniqueIndex;
 
 /**
  * Class User
  * @Document(collection="user")
+ * @HasLifecycleCallbacks()
  */
 
 class User
@@ -33,7 +38,7 @@ class User
 
     /**
      * @var string $email
-     * @Field(type="string")
+     * @Field(type="string") @UniqueIndex()
      */
     private $email;
 
@@ -109,13 +114,6 @@ class User
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getPassword(): string
-    {
-        return $this->password;
-    }
 
     /**
      * @param string $password
@@ -123,7 +121,7 @@ class User
      */
     public function setPassword(string $password): User
     {
-        $this->password = $password;
+        $this->password = password_hash($password, PASSWORD_ARGON2I);
         return $this;
     }
 
@@ -165,6 +163,23 @@ class User
 
     public function extract()
     {
+        unset($this->password);
         return get_object_vars($this);
     }
+
+    /**
+     * @PrePersist()
+     */
+    public function prePersist() {
+        $this->registered = new \DateTime();
+        $this->updated = new \DateTime();
+    }
+
+    /**
+     * @PreUpdate()
+     */
+    public function preUpdate() {
+        $this->updated = new \DateTime();
+    }
+
 }

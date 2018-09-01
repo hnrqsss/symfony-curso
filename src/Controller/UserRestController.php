@@ -11,6 +11,7 @@ namespace App\Controller;
 use App\Document\User;
 use App\Repository\UserRepository;
 use App\Response\ApiResponse;
+use App\Service\UserService;
 use FOS\RestBundle\Controller\FOSRestController;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -18,11 +19,11 @@ use Symfony\Component\HttpFoundation\Request;
 class UserRestController extends FOSRestController
 {
 
-    private $repository;
+    private $service;
 
-    public function __construct(UserRepository $repository)
+    public function __construct(UserService $service)
     {
-        $this->repository = $repository;
+        $this->service = $service;
     }
 
     /**
@@ -32,16 +33,14 @@ class UserRestController extends FOSRestController
     public function get(string $id)
     {
         try{
-            $response = $this->repository->findOneBy(['id' => $id]);
+
+            $response = $this->service->findOneById($id);
+
         }catch (\Exception $exception) {
             ApiResponse::error('Usuários não encontrados', [$exception->getMessage()]) ;
         }
 
-        if(!$response) {
-            return ApiResponse::error('Usuário não encontrados', ['Id inválido']) ;
-        }
-
-        return ApiResponse::success('Usuário encontrado', $response->extract());
+        return ApiResponse::success('Usuário encontrado', $response);
     }
 
     /**
@@ -55,13 +54,7 @@ class UserRestController extends FOSRestController
       }
 
       try {
-
-          $response = $this->repository->findAll();
-
-          $response = array_map(function (User $user){
-              return $user->extract();
-          }, $response);
-
+          $response = $this->service->findAll();
       } catch (\Exception $exception) {
           ApiResponse::error('Usuários não encontrados', [$exception->getMessage()]);
       }
@@ -77,20 +70,37 @@ class UserRestController extends FOSRestController
 
         $request = json_decode($request->getContent());
 
-        $user = new User();
-        $user->setName($request->name);
-        $user->setEmail($request->email);
-        $user->setPassword($request->password);
-        $user->setRegistered(new \DateTime());
-        $user->setUpdated(new \DateTime());
-
-
         try {
-            $response = $this->repository->insert($user);
+            $response = $this->service->insert($request);
         } catch (\Exception $exception) {
             return ApiResponse::error('Error ao cadastrar o usuário',[$exception->getMessage()]);
         }
 
-        return ApiResponse::success('usuário cadastrado', $response->extract());
+        return ApiResponse::success('usuário cadastrado', $response);
+    }
+
+    public function putAction(string $id, Request $request) {
+
+        $request = json_decode($request->getContent());
+
+        try{
+            $response = $this->service->updateById($id,$request);
+        }catch (\Exception $exception ) {
+            return ApiResponse::error('Erro ao atualizar registro', [$exception->getMessage()]);
+        }
+
+        return ApiResponse::success('Usuário atualizado com sucesso', $response->extract());
+    }
+
+    public function deleteAction(string $id) {
+
+        try {
+            $this->service->deleteById($id);
+
+        }catch (\Exception $exception) {
+            ApiResponse::error('Erro ao deletar o usuário', [$exception->getMessage()]);
+        }
+
+        return ApiResponse::success('Usuário deletado com sucesso',[]);
     }
 }

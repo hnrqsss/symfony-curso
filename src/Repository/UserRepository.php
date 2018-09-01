@@ -32,6 +32,18 @@ class UserRepository extends DocumentRepository
         return $user;
     }
 
-//    public function
+    public function updateById(string $id, User $user) {
+
+        $this->getDocumentPersister()->update($user);
+        $this->getDocumentManager()->flush();
+
+        return $user;
+
+    }
+
+    public function deleteOne(User $user) {
+        $this->getDocumentPersister()->delete($user);
+        $this->getDocumentManager()->flush();
+    }
 
 }
