@@ -31,11 +31,14 @@ class UserRestController extends FOSRestController
      */
     public function get(string $id)
     {
-        $response = '';
         try{
             $response = $this->repository->findOneBy(['id' => $id]);
         }catch (\Exception $exception) {
             ApiResponse::error('Usuários não encontrados', [$exception->getMessage()]) ;
+        }
+
+        if(!$response) {
+            return ApiResponse::error('Usuário não encontrados', ['Id inválido']) ;
         }
 
         return ApiResponse::success('Usuário encontrado', $response->extract());
