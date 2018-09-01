@@ -8,6 +8,8 @@
 
 namespace App\Controller;
 
+use App\Document\User;
+use App\Repository\UserRepository;
 use App\Response\ApiResponse;
 use FOS\RestBundle\Controller\FOSRestController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,18 +17,13 @@ use Symfony\Component\HttpFoundation\Request;
 
 class UserRestController extends FOSRestController
 {
-    private $users = [
-        [
-            'id' => 1,
-            'nome' => 'Henrique',
-            'email' => 'hnrq.assuncao@gmail.com'
-        ],
-        [
-            'id' => 2,
-            'nome' => 'Eduardo',
-            'email' => 'eduardoroseo@gmail.com'
-        ]
-    ];
+
+    private $repository;
+
+    public function __construct(UserRepository $repository)
+    {
+        $this->repository = $repository;
+    }
 
     /**
      * @param string $id
@@ -34,10 +31,14 @@ class UserRestController extends FOSRestController
      */
     public function get(string $id)
     {
+        $response = '';
+        try{
+            $response = $this->repository->findOneBy(['id' => $id]);
+        }catch (\Exception $exception) {
+            ApiResponse::error('Usuários não encontrados', [$exception->getMessage()]) ;
+        }
 
-        return $this->users !== null ? ApiResponse::success('Usuário encontrado', $this->users[$id-1])
-            : ApiResponse::error('Usuários não encontrados', ['error ao encontrar usuário']) ;
-
+        return ApiResponse::success('Usuário encontrado', $response->extract());
     }
 
     /**
@@ -47,12 +48,22 @@ class UserRestController extends FOSRestController
     public function getAction(string $id = null) {
 
       if($id) {
-
-          return $this->get((int) $id);
+          return $this->get($id);
       }
 
-      return $this->users !== null ? ApiResponse::success('Usuários encontrados', $this->users)
-        : ApiResponse::error('Usuários não encontrados', ['error ao encontrar usuários']) ;
+      try {
+
+          $response = $this->repository->findAll();
+
+          $response = array_map(function (User $user){
+              return $user->extract();
+          }, $response);
+
+      } catch (\Exception $exception) {
+          ApiResponse::error('Usuários não encontrados', [$exception->getMessage()]);
+      }
+
+      return ApiResponse::success('Usuários encontrados', $response);
     }
 
     /**
@@ -63,6 +74,20 @@ class UserRestController extends FOSRestController
 
         $request = json_decode($request->getContent());
 
-        return ApiResponse::success('usuário cadastrado', $request);
+        $user = new User();
+        $user->setName($request->name);
+        $user->setEmail($request->email);
+        $user->setPassword($request->password);
+        $user->setRegistered(new \DateTime());
+        $user->setUpdated(new \DateTime());
+
+
+        try {
+            $response = $this->repository->insert($user);
+        } catch (\Exception $exception) {
+            return ApiResponse::error('Error ao cadastrar o usuário',[$exception->getMessage()]);
+        }
+
+        return ApiResponse::success('usuário cadastrado', $response->extract());
     }
 }
