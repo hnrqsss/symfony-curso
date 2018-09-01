@@ -11,18 +11,23 @@ namespace App\Service;
 
 use App\Document\User;
 use App\Repository\UserRepository;
+use App\Validator\UserValidator;
 
 class UserService
 {
     private $repository;
+    private $validador;
 
-    public function __construct(UserRepository $repository)
+    public function __construct(UserRepository $repository, UserValidator $validator)
     {
         $this->repository = $repository;
+        $this->validador = $validator;
     }
 
     public function insert($request)
     {
+
+        $this->validador->validateUser($request);
 
         if($this->repository->findBy(['email' => $request->email])) {
             throw new \Exception('Email já existe');
